@@ -53,9 +53,16 @@
     render();
   }
 
+  function shortDT(isoStr){
+    try{
+      const d=new Date(isoStr);
+      return d.toLocaleDateString("en-IN",{day:"2-digit",month:"short"}).toUpperCase()
+        + ", " + d.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"}).toUpperCase();
+    }catch(e){ return ""; }
+  }
   function stamp(s){
     if(s.disabled) return `<span class="stamp off">OFF</span>`;
-    if(s.window==="upcoming") return `<span class="stamp soon">OPENS ${esc(s.opensAt).toUpperCase()}</span>`;
+    if(s.window==="upcoming") return `<span class="stamp soon">OPENS ${esc(shortDT(s.opensISO)||s.opensAt)}</span>`;
     if(s.window==="closed") return `<span class="stamp off">GONE</span>`;
     if(s.available<=0) return `<span class="stamp full">FULL</span>`;
     return `<span class="stamp open">OPEN</span>`;
@@ -67,7 +74,7 @@
       const title=s.kind==="special"?esc(s.serviceName):String(s.day||"").slice(0,3).toUpperCase();
       const sub2=`${fmtD(s.serviceDate)} · ${esc(String(s.departure).split(" ").pop())} · ${esc(s.from)} → ${esc(s.to)}`;
       const sub=s.disabled?("Off"+(s.disableReason?": "+esc(s.disableReason):""))
-        : s.window==="upcoming"?("Opens "+esc(s.opensAt))
+        : s.window==="upcoming"?("Opens "+esc(s.opensAt)+" → Closes "+esc(s.closesAt))
         : s.window==="closed"?("Closed "+esc(s.closesAt))
         : s.available>0?(`${s.waitlistCount? s.waitlistCount+" on waitlist · ":""}closes ${esc(String(s.departure).split(" ").pop())}`)
         :(`Sorry — all ${s.totalSeats} filled`+(s.waitlistCount?` · ${s.waitlistCount} waiting`:" — join waitlist"));

@@ -118,7 +118,7 @@ In `SpecialServices`, add one row per bus — it goes **live on the site immedia
 
 Rules:
 - **Booking Opens At blank = bookable the second you add the row.** Set an explicit `YYYY-MM-DD HH:MM` only if you want it to open later.
-- **Booking Closes At blank = closes at departure.** Departure Time blank = 21:00. Accepts `14:30` or `2:30 PM`.
+- **Booking Closes At blank = closes at departure.** Departure Time blank = 21:00. Accepts `14:30` or `2:30 PM`. Whatever closing you set is shown on the site card ("Opens … → Closes …").
 - **Total Seats blank = 32.** From/To blank = Thampanoor → IISER TVM.
 - **Service ID:** leave blank to auto-generate — but best to fill a short stable ID (`ONAM-1`) and never change it once bookings exist (bookings link to it).
 - To pull an event bus off the site, tick `Disabled = TRUE` (+ reason). Past departures drop off automatically.
