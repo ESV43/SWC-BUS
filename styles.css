@@ -43,8 +43,7 @@ section{padding:16px 16px 18px}
 /* route */
 .route{background:#fbf7ea;border-bottom:2px solid var(--line);padding:18px 16px 14px}
 .route-title{font-size:clamp(28px,8vw,40px);font-weight:900;letter-spacing:-.5px;line-height:1.05;margin:0}
-.route-sub{font-size:10.5px;letter-spacing:2px;color:var(--mut);margin-top:4px}
-.route-meta{margin-top:8px;font-size:11px;letter-spacing:.5px;color:var(--ink);display:flex;gap:8px;flex-wrap:wrap}
+.route-sub{font-size:10.5px;letter-spacing:2px;color:var(--mut);margin-top:4px;margin-bottom:2px}
 .mono{font-family:var(--mono)}
 .countdown{margin-top:10px;background:var(--ink);color:#f5f1e6;border-radius:9px;padding:10px 12px;font-size:12.5px}
 /* perforation */
