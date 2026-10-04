@@ -85,7 +85,7 @@ Any static host works — GitHub Pages / Netlify / Vercel / IISER server:
 ```
 index.html  styles.css  app.js  config.js  SWC.png  Code.gs  SETUP.md
 ```
-Open `index.html` — if `APPS_SCRIPT_URL` is empty you see **DEMO** (localStorage, seeded bookings, plus a "＋ add demo event bus" button to try specials). Once the URL is set, badge flips to **● LIVE**.
+Open `index.html` — the badge in the header shows **● LIVE** once `APPS_SCRIPT_URL` is set. If it shows **⚠ SETUP NEEDED**, the URL is missing.
 
 Test locally:
 ```bash
@@ -125,6 +125,13 @@ Rules:
 - Multiple extra buses on the same day? Just add more rows — each gets its own card, seats, waitlist, and mails.
 
 Never delete `Bookings` rows — cancel via website so waitlist promotion + mails fire. Cancelled rows stay as `CANCELLED` for records.
+
+### C. 🎨 Colour bookings by date (one colour per day)
+Every new booking is **auto-coloured** by its Service Date (pastel yellow, mint, sky… cycling), so all bookings for one day visually group together. Dates are coloured chronologically, so colours stay stable as new weekends get added.
+- Colours refresh automatically on each new booking.
+- To recolour anytime (e.g. after hand-edits): open the Sheet → menu **🚌 SWC Bus → 🎨 Color bookings by date**. (Reopen the Sheet once after deploying so the menu appears.)
+- Or run the `colorBookingsByDate` function directly from Extensions → Apps Script.
+- To change the palette, edit the `DATE_COLORS` list at the top of `Code.gs` and redeploy.
 
 All booking / cancellation / waitlist / promotion mails go out in real time from **SWC.IISER.TVM** with booking ID, date, route, and boarding instructions.
 

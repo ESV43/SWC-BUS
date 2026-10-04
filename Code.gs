@@ -369,6 +369,7 @@ function bookSeat(p) {
     createdAt: now, updatedAt: now, cancelledAt: '', notes: '',
     serviceId: svc.serviceId, serviceName: svc.serviceName
   });
+  try { colorBookingsByDate(); } catch(e) {} // keep date colours fresh; never fail a booking
 
   // emails (real-time)
   try {
@@ -576,6 +577,53 @@ function parseServiceDate(s) {
   const d = new Date(parts[0], parts[1]-1, parts[2]);
   const names = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   return { date: d, dayName: names[d.getDay()] };
+}
+
+/* ---------- date colours: one pastel colour per Service Date ---------- */
+// Palette cycles if there are more distinct dates than colours.
+const DATE_COLORS = [
+  '#FFF2CC', // warm yellow
+  '#D9EAD3', // mint green
+  '#CFE2F3', // sky blue
+  '#F4CCCC', // soft red
+  '#EAD1DC', // rose
+  '#D9D2E9', // lavender
+  '#FCE5CD', // peach
+  '#D0E0E3', // teal grey
+  '#FFFACD', // lemon
+  '#DDEBF7'  // pale blue
+];
+
+// Paint every Bookings row by its Service Date so each day stands out.
+// Safe to run anytime: header untouched, blank dates stay white.
+function colorBookingsByDate() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_BOOKINGS);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, colored: 0 };
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  const dates = sh.getRange(2, 2, lastRow - 1, 1).getValues().map(function(r){
+    const d = r[0];
+    return (d instanceof Date) ? toISODate(d) : String(d || '').slice(0, 10);
+  });
+  const uniq = [];
+  dates.forEach(function(d){ if (d && uniq.indexOf(d) < 0) uniq.push(d); });
+  uniq.sort(); // chronological → stable colours
+  const map = {};
+  uniq.forEach(function(d, i){ map[d] = DATE_COLORS[i % DATE_COLORS.length]; });
+  for (let i = 0; i < dates.length; i++) {
+    const color = map[dates[i]] || '#FFFFFF';
+    sh.getRange(i + 2, 1, 1, lastCol).setBackground(color);
+  }
+  return { ok: true, colored: dates.length, dates: uniq.length };
+}
+
+// Adds a one-click menu to the spreadsheet: 🚌 SWC Bus → 🎨 Color bookings by date
+function onOpen() {
+  try {
+    SpreadsheetApp.getUi().createMenu('🚌 SWC Bus')
+      .addItem('🎨 Color bookings by date', 'colorBookingsByDate')
+      .addToUi();
+  } catch(e) {}
 }
 
 // Booking windows (IST) — form stays open till departure 9 PM:
