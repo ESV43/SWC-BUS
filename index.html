@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SWC Bus Slip · Thampanoor 9 PM → IISER TVM</title>
+<meta name="description" content="SWC weekend night bus booking — Thampanoor 9 PM to IISER TVM. 32 seats, live count, waitlist." />
+<link rel="icon" href="SWCBUS.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<header class="mast">
+  <img src="SWCBUS.png" alt="SWC shuttle bus" class="mast-logo" />
+  <div class="mast-titles">
+    <strong>SWC · IISER TVM</strong>
+    <span>WEEKEND NIGHT BUS SLIP</span>
+  </div>
+  <div class="mast-right">
+    <span id="modeBadge" class="serial">DEMO</span>
+    <button id="loginBtn" class="mini-btn">Google sign-in</button>
+    <span id="userChip" class="hidden user-chip"><span id="userEmail"></span><button id="logoutBtn" aria-label="sign out">✕</button></span>
+  </div>
+</header>
+
+<main class="slip">
+
+  <!-- route strip -->
+  <section class="route">
+    <div class="route-stops">
+      <div><small>FROM · 9:00 PM</small><strong>Thampanoor</strong></div>
+      <div class="arrow" aria-hidden="true">━━━🚌━━━▶</div>
+      <div class="to"><small>TO</small><strong>IISER TVM</strong></div>
+    </div>
+    <div class="route-meta mono">
+      <span>SAT + SUN NIGHTS</span><span>·</span><span>32 SEATS</span><span>·</span><span>BOARD BY 8:45 PM</span>
+    </div>
+    <div id="countdown" class="countdown mono">checking live status…</div>
+  </section>
+
+  <div class="perf" aria-hidden="true"></div>
+
+  <!-- live columns -->
+  <section>
+    <h2 class="sec-t">This weekend <span id="liveDot" class="live-dot"></span></h2>
+    <div id="serviceCards" class="bus-cols"></div>
+    <p class="hint">Windows: Sat bus opens Fri 5:30 PM · Sun bus opens Sat 5:30 PM · both close at 9 PM. Event shuttles appear here automatically and are bookable right away.</p>
+    <div id="demoTools" class="hidden">
+      <button id="demoEventBtn" class="mini-btn solid" type="button">＋ add demo event bus</button>
+    </div>
+  </section>
+
+  <div class="perf" aria-hidden="true"></div>
+
+  <!-- booking -->
+  <section>
+    <h2 class="sec-t">Book a seat</h2>
+    <p class="hint">Only <strong>@iisertvm.ac.in</strong> IDs. One booking per email per bus. No seat choice — first-come, first-served.</p>
+    <div id="gBtnWrap"></div>
+    <form id="bookForm" autocomplete="on">
+      <label class="fld"><span>BUS</span>
+        <select id="fService" required></select>
+      </label>
+      <label class="fld"><span>FULL NAME</span>
+        <input id="fName" required maxlength="60" placeholder="e.g. Ananya Nair" />
+      </label>
+      <div class="two">
+        <label class="fld"><span>PHONE</span>
+          <input id="fPhone" required inputmode="tel" pattern="[0-9+\-\s]{8,15}" placeholder="10-digit mobile" />
+        </label>
+        <label class="fld"><span>IISER EMAIL</span>
+          <input id="fEmail" required type="email" placeholder="you@iisertvm.ac.in" />
+        </label>
+      </div>
+      <div id="formMsg" class="form-msg"></div>
+      <button class="book-btn" type="submit" id="bookBtn">BOOK SEAT →</button>
+      <p class="hint">Full bus? You'll be offered the waitlist — if someone cancels, #1 is auto-confirmed &amp; emailed by <strong>SWC.IISER.TVM</strong>.</p>
+    </form>
+  </section>
+
+  <div class="perf" aria-hidden="true"></div>
+
+  <!-- my bookings -->
+  <section>
+    <h2 class="sec-t">My bookings</h2>
+    <div class="lookup">
+      <input id="lookupEmail" type="email" placeholder="you@iisertvm.ac.in" />
+      <button id="lookupBtn" class="mini-btn solid">Find</button>
+    </div>
+    <div id="myList" class="my-list"><p class="hint">Enter your IISER email to see / cancel bookings.</p></div>
+  </section>
+
+  <div class="barcode" aria-hidden="true"></div>
+  <footer class="foot mono">SWC.IISER.TVM — board Thampanoor by 8:45 PM with college ID</footer>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <button id="modalClose" class="book-btn">DONE</button>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
