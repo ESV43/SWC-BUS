@@ -51,6 +51,10 @@ const SENDER_NAME = 'SWC.IISER.TVM';
 const TIMEZONE = 'Asia/Kolkata';
 const DEFAULT_FROM = 'Thampanoor Bus Stand';
 const DEFAULT_TO = 'IISER Thiruvananthapuram';
+// Logo shown at the top of every mail. Upload SWCBUS-mail.png alongside your
+// site (GitHub Pages) and paste its full https URL here. Blank = text header.
+// e.g. 'https://YOUR-USERNAME.github.io/YOUR-REPO/SWCBUS-mail.png'
+const LOGO_URL = '';
 
 /* ---------- one-time setup ---------- */
 function setupSheets() {
@@ -668,14 +672,19 @@ function sendMail(to, subject, html) {
 function stripTags(h){ return String(h).replace(/<[^>]*>/g, ' ').replace(/&rarr;/g, '->').replace(/&middot;/g, '-').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim(); }
 // Paper-slip look, same as the website. All inline CSS for mail-app safety.
 function htmlWrapper(subject, inner) {
+  const brand = LOGO_URL
+    ? '<img src="' + LOGO_URL + '" alt="SWC Shuttle Bus" height="40" style="display:block;border:0;background:#ffffff;border-radius:8px;padding:2px">'
+    : '<span style="font-size:15px;font-weight:bold;letter-spacing:.5px">SWC &middot; IISER TVM</span>';
   return '<div style="background:#f5f1e6;padding:16px;font-family:Arial,Helvetica,sans-serif">'
     + '<div style="max-width:520px;margin:auto;background:#fffdf6;border:2px solid #191712;border-radius:14px;overflow:hidden">'
-    + '<div style="background:#191712;color:#f5f1e6;padding:12px 18px">'
-    + '<span style="font-size:15px;font-weight:bold;letter-spacing:.5px">SWC &middot; IISER TVM</span>'
-    + '<span style="float:right;font-family:monospace;font-size:10px;letter-spacing:2px;color:#e8dfc8">BUS SLIP</span>'
+    + '<div style="background:#191712;color:#f5f1e6;padding:10px 18px">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:0"><tr>'
+    + '<td align="left" style="vertical-align:middle">' + brand + '</td>'
+    + '<td align="right" style="vertical-align:middle;font-family:monospace;font-size:10px;letter-spacing:2px;color:#e8dfc8">BUS SLIP</td>'
+    + '</tr></table>'
     + '</div>'
-    + '<div style="padding:18px">' + inner + '</div>'
-    + '<div style="border-top:2px dashed #191712;padding:10px 18px;font-family:monospace;font-size:10px;letter-spacing:1px;color:#6d675c">SWC.IISER.TVM &middot; AUTOMATED MAIL &middot; DO NOT REPLY &middot; BOARD WITH COLLEGE ID</div>'
+    + '<div style="padding:16px 18px">' + inner + '</div>'
+    + '<div style="border-top:2px dashed #191712;padding:10px 18px;font-family:monospace;font-size:10px;letter-spacing:1px;color:#6d675c">SWC.IISER.TVM &middot; AUTOMATED MAIL &middot; DO NOT REPLY</div>'
     + '</div></div>';
 }
 function slipHead(title, stampText, stampColor) {
@@ -703,35 +712,35 @@ function slipNote(t) {
 }
 function confirmedHtml(name, id, date, day, seat, st) {
   return slipHead('Seat booked', 'CONFIRMED', '#12784a')
-    + '<p style="font-size:14px;color:#191712">Hi <b>' + esc(name) + '</b>, your seat is confirmed.</p>'
     + slipRoute(st)
     + slipRow('BOOKING ID', id)
-    + slipRow('SEAT (NO CHOICE, FIRST-COME)', seat + ' / ' + st.totalSeats)
-    + slipRow('BOARDING', 'Be ready 15 min early + college ID')
-    + slipNote('To cancel, open the website &rarr; My bookings. Your seat will go to the waitlist.');
+    + slipRow('NAME', name)
+    + slipRow('SEAT (NO CHOICE)', seat + ' / ' + st.totalSeats)
+    + slipRow('BOARD', '15 min early + college ID')
+    + slipNote('Cancel: website &rarr; My bookings. Seat goes to the waitlist.');
 }
 function waitlistHtml(name, id, date, day, pos, st) {
   return slipHead('Waitlist', '#' + pos, '#9a6200')
-    + '<p style="font-size:14px;color:#191712">Hi <b>' + esc(name) + '</b>, all <b>' + st.totalSeats + ' seats</b> are filled.</p>'
     + slipRoute(st)
     + slipRow('BOOKING ID', id)
-    + slipRow('WAITLIST POSITION', '#' + pos)
-    + slipNote('If someone cancels, you are auto-confirmed and mailed instantly. You can cancel this waitlist entry anytime from the website.');
+    + slipRow('NAME', name)
+    + slipRow('POSITION', '#' + pos + ' of ' + st.totalSeats + ' seats filled')
+    + slipNote('Auto-confirmed + mailed if someone cancels. Cancel anytime on the website.');
 }
 function cancelledHtml(name, id, date, label) {
   return slipHead('Booking cancelled', 'CANCELLED', '#6d675c')
-    + '<p style="font-size:14px;color:#191712">Hi <b>' + esc(name) + '</b>, this booking is cancelled and the seat is released to the waitlist.</p>'
     + slipRow('BOOKING ID', id)
+    + slipRow('NAME', name)
     + slipRow('SERVICE', label || date)
-    + slipNote('Hope to see you on the next bus.');
+    + slipNote('Seat released to the waitlist. See you on the next bus.');
 }
 function promotedHtml(name, id, date, seat, st) {
   return slipHead('Seat confirmed', 'CONFIRMED', '#12784a')
-    + '<p style="font-size:14px;color:#191712">Hi <b>' + esc(name) + '</b>, a seat opened up and your waitlist booking is now <b>confirmed</b>.</p>'
     + slipRoute(st)
     + slipRow('BOOKING ID', id)
-    + slipRow('SEAT (NO CHOICE, FIRST-COME)', seat + ' / ' + st.totalSeats)
-    + slipNote('Please board on time with college ID.');
+    + slipRow('NAME', name)
+    + slipRow('SEAT (NO CHOICE)', seat + ' / ' + st.totalSeats)
+    + slipNote('Board on time with college ID.');
 }
 function kv(k,v){ return slipRow(k, v); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }

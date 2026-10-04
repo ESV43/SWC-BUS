@@ -64,6 +64,8 @@ APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfyc.../exec",
 
 To update code later: Deploy → Manage deployments → Edit → New version.
 
+**Logo in mails:** push `SWCBUS-mail.png` with your site so it is public at `https://YOUR-USERNAME.github.io/YOUR-REPO/SWCBUS-mail.png`, paste that URL into `LOGO_URL` at the top of `Code.gs`, and redeploy a new version. Until then mails show a text header.
+
 ---
 
 ## 4. Enable Google Login (5 min)
