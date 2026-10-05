@@ -72,19 +72,25 @@
     cardsEl.innerHTML=services.map(s=>{
       const pct=Math.min(100,Math.round(s.confirmedCount/s.totalSeats*100));
       const title=s.kind==="special"?esc(s.serviceName):String(s.day||"").slice(0,3).toUpperCase();
-      const sub2=`${fmtD(s.serviceDate)} · ${esc(String(s.departure).split(" ").pop())} · ${esc(s.from)} → ${esc(s.to)}`;
-      const sub=s.disabled?("Off"+(s.disableReason?": "+esc(s.disableReason):""))
+      const timeOnly=esc(String(s.departure).split(" ").pop());
+      const busTime=`${fmtD(s.serviceDate)} · ${timeOnly}`;
+      const routeLine=`${esc(s.from)} → ${esc(s.to)}`;
+      const bookingLine=s.disabled?("Off"+(s.disableReason?": "+esc(s.disableReason):""))
         : s.window==="upcoming"?("Opens "+esc(s.opensAt)+" → Closes "+esc(s.closesAt))
         : s.window==="closed"?("Closed "+esc(s.closesAt))
-        : s.available>0?(`${s.waitlistCount? s.waitlistCount+" on waitlist · ":""}closes ${esc(String(s.departure).split(" ").pop())}`)
-        :(`Sorry — all ${s.totalSeats} filled`+(s.waitlistCount?` · ${s.waitlistCount} waiting`:" — join waitlist"));
+        : s.available>0?(`${s.waitlistCount? s.waitlistCount+" on waitlist · ":""}Closes ${timeOnly}`)
+        :(`All ${s.totalSeats} filled`+(s.waitlistCount?` · ${s.waitlistCount} waiting`:" — join waitlist"));
       const can=s.bookingOpen;
       const btn=s.disabled?"NOT OPERATING":s.window==="upcoming"?"OPENS "+esc(s.opensAt):s.window==="closed"?"BOOKING CLOSED":s.available>0?"BOOK THIS BUS":"JOIN WAITLIST";
       return `<div class="bus ${s.disabled?"off":""} ${s.available<=0&&!s.disabled?"full":""}">
-        <div class="bus-top"><div><div class="bus-day">${title}</div><div class="bus-date">${sub2}</div></div>${stamp(s)}</div>
+        <div class="bus-top"><div><div class="bus-day">${title}</div></div>${stamp(s)}</div>
+        <div class="bus-lines">
+          <div><span>BUS TIME:</span> <strong>${busTime}</strong></div>
+          <div><span>ROUTE:</span> <strong>${routeLine}</strong></div>
+          <div><span>BOOKING TIME:</span> <strong>${bookingLine}</strong></div>
+        </div>
         <div class="seat-big">${s.disabled?"–":s.available}<small> / ${s.totalSeats} left</small></div>
         <div class="meter"><i style="width:${s.disabled?0:pct}%"></i></div>
-        <div class="bus-meta">${sub}</div>
         <button class="pick" ${can?"":"disabled"} onclick="window._prefill('${esc(s.serviceId)}')">${btn}</button>
       </div>`;
     }).join("") || `<p class="hint">No upcoming buses right now — check back soon.</p>`;
