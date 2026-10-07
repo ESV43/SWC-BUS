@@ -8,7 +8,15 @@
   let services = [];
   let timer = null;
   let user = null;
-  try { user = JSON.parse(localStorage.getItem("swc_user") || "null"); } catch(e){}
+  try { user = JSON.parse(localStorage.getItem("swc_user") || "null"); } catch(e){ user=null; }
+  // Drop restored sessions that are not IISER or whose Google token already expired
+  try{
+    if(user && (!user.email || String(user.email).toLowerCase().indexOf(DOMAIN)===-1)) user=null;
+    if(user && user.idToken){
+      const pay=JSON.parse(atob(user.idToken.split(".")[1]));
+      if(pay.exp && pay.exp*1000 < Date.now()){ user=null; try{localStorage.removeItem("swc_user");}catch(e){} }
+    } else if(user && !user.idToken){ user=null; try{localStorage.removeItem("swc_user");}catch(e){} }
+  }catch(e){ user=null; }
 
   const pad = (n)=>String(n).padStart(2,"0");
   const fmtD = (iso)=>{ const p=String(iso).split("-").map(Number); return new Date(p[0],p[1]-1,p[2]).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"}); };
@@ -118,18 +126,23 @@
   }
   timer=setInterval(tick,1000);
 
-  /* auth — Google Identity Services, IISER domain enforced */
+  /* auth — Google Identity Services, IISER domain enforced.
+     Email is NEVER typed: it comes only from the verified Google ID token. */
   function initAuth(){
+    lockEmailField();
     paintUser();
     const cid=(CFG.GOOGLE_CLIENT_ID||"").trim();
     if(!cid){
-      $("loginBtn").onclick=()=>toast("Google sign-in is not configured yet. You can still book with your @iisertvm.ac.in email below.","err");
+      $("loginBtn").onclick=()=>toast("Google sign-in is not configured yet. Booking needs Google login.","err");
+      $("formMsg").className="form-msg err";
+      $("formMsg").textContent="Google sign-in is not configured — booking disabled.";
+      $("bookBtn").disabled=true;
       return;
     }
     let ready=false;
     const boot=()=>{
       try{
-        google.accounts.id.initialize({client_id:cid,callback:onCred});
+        google.accounts.id.initialize({client_id:cid,callback:onCred,hd:"iisertvm.ac.in",auto_select:false});
         google.accounts.id.renderButton($("gBtnWrap"),{theme:"outline",size:"large",text:"signin_with",shape:"rectangular"});
         ready=true;
       }catch(e){ setTimeout(boot,800); }
@@ -137,38 +150,71 @@
     boot();
     $("loginBtn").onclick=()=>{ try{google.accounts.id.prompt();}catch(e){ if(!ready) toast("Google sign-in still loading…","err"); } };
   }
+  /* Hard-lock the email input: readonly in HTML + JS guards against paste/drop/autofill tampering */
+  function lockEmailField(){
+    const el=$("fEmail");
+    if(!el) return;
+    el.setAttribute("readonly","");
+    el.setAttribute("aria-readonly","true");
+    el.setAttribute("autocomplete","off");
+    ["paste","drop","keydown","keypress","beforeinput"].forEach(ev=>el.addEventListener(ev,(e)=>{
+      // allow Tab navigation only; block any value change
+      if(e.type==="keydown" && (e.key==="Tab"||e.key==="Escape")) return;
+      e.preventDefault();
+    }));
+    el.addEventListener("focus",()=>el.blur());
+  }
   function onCred(resp){
     try{
       const payload=JSON.parse(atob(resp.credential.split(".")[1]));
-      const email=(payload.email||"").toLowerCase();
-      if(!email.endsWith(DOMAIN)){ toast("Only "+DOMAIN+" IDs can book.","err"); return; }
-      user={name:payload.name||email.split("@")[0],email};
+      const email=(payload.email||"").toLowerCase().trim();
+      if(payload.hd && payload.hd.toLowerCase()!=="iisertvm.ac.in"){ toast("Only @iisertvm.ac.in IDs can book.","err"); return; }
+      if(!email.endsWith(DOMAIN)){ toast("Only "+DOMAIN+" IDs can book. Signed in as "+email,"err"); return; }
+      if(payload.email_verified===false){ toast("Google email not verified. Use a verified @iisertvm.ac.in ID.","err"); return; }
+      user={name:payload.name||email.split("@")[0],email,idToken:resp.credential};
       try{localStorage.setItem("swc_user",JSON.stringify(user));}catch(e){}
       paintUser();
-      $("fEmail").value=email; if(!$("fName").value&&payload.name) $("fName").value=payload.name;
+      if(!$("fName").value&&payload.name) $("fName").value=payload.name;
       toast("Verified "+email,"ok");
+      loadMy();
     }catch(e){ toast("Sign-in failed.","err"); }
   }
   function paintUser(){
-    const has=!!user;
+    const has=!!(user&&user.email);
     $("loginBtn").classList.toggle("hidden",has);
     $("userChip").classList.toggle("hidden",!has);
-    if(has){ $("userEmail").textContent=user.email; if(!$("lookupEmail").value) $("lookupEmail").value=user.email; if(!$("fEmail").value) $("fEmail").value=user.email; }
+    if(has){
+      $("userEmail").textContent=user.email;
+      $("fEmail").value=user.email; // auto-fill only, never typed
+      $("authGate").classList.add("hidden");
+      $("myAuthHint").textContent="Signed in as "+user.email+" — showing your bookings.";
+    }else{
+      $("fEmail").value="";
+      $("authGate").classList.remove("hidden");
+      $("myAuthHint").textContent="🔒 Sign in with Google above to see / cancel your bookings. Email lookup is disabled — bookings load only from your signed-in ID.";
+      $("myList").innerHTML=`<p class="hint">Not signed in.</p>`;
+    }
   }
-  $("logoutBtn").onclick=()=>{ user=null; try{localStorage.removeItem("swc_user");}catch(e){} paintUser(); };
+  $("logoutBtn").onclick=()=>{ user=null; try{localStorage.removeItem("swc_user");}catch(e){} try{google.accounts.id.disableAutoSelect();}catch(e){} paintUser(); };
 
-  /* book */
+  /* book — email comes ONLY from Google login, never from the input */
   $("bookForm").addEventListener("submit",async(e)=>{
     e.preventDefault();
     const msg=$("formMsg"); msg.className="form-msg"; msg.textContent="";
+    if(!user||!user.email||!user.idToken){
+      msg.className="form-msg err"; msg.textContent="Please sign in with your @iisertvm.ac.in Google account first.";
+      toast("Google sign-in required.","err");
+      return;
+    }
     const serviceId=$("fService").value;
     const svc=services.find(x=>x.serviceId===serviceId) || {};
-    const name=$("fName").value.trim(), phone=$("fPhone").value.trim(), email=$("fEmail").value.trim().toLowerCase();
-    if(!email.endsWith(DOMAIN)){ msg.className="form-msg err"; msg.textContent="Only "+DOMAIN+" IDs can book."; return; }
-    if(user&&user.email!==email){ msg.className="form-msg err"; msg.textContent="Signed in as "+user.email+" — use the same email."; return; }
+    const name=$("fName").value.trim(), phone=$("fPhone").value.trim();
+    const email=user.email.toLowerCase(); // authoritative source — ignore anything in #fEmail
+    $("fEmail").value=email; // re-sync in case DevTools tampered with it
+    if(!email.endsWith(DOMAIN)){ msg.className="form-msg err"; msg.textContent="Only "+DOMAIN+" IDs can book. You are signed in as "+email+"."; return; }
     $("bookBtn").disabled=true; $("bookBtn").textContent="BOOKING…";
     try{
-      const j=await apiPost({action:"book",serviceId,serviceDate:svc.serviceDate,name,email,phone});
+      const j=await apiPost({action:"book",serviceId,serviceDate:svc.serviceDate,name,email,phone,idToken:user.idToken});
       if(!j.ok) throw new Error(j.error);
       const tag=svc.serviceName?esc(svc.serviceName)+" · ":"";
       if(j.status==="CONFIRMED"){
@@ -178,20 +224,23 @@
         msg.className="form-msg ok"; msg.textContent=`All ${svc.totalSeats||""} filled — waitlist #${j.waitlistPosition}`;
         showModal("Waitlist #"+j.waitlistPosition,`Sorry, all seats are filled.<br><br>You are <b>#${esc(j.waitlistPosition)}</b> for ${tag}<b>${esc(svc.serviceDate||"")}</b> (ID <b>${esc(j.bookingId)}</b>).<br>Auto-confirm + mail if someone cancels.`);
       }
-      loadServices(); loadMy(email);
-    }catch(err){ msg.className="form-msg err"; msg.textContent=err.message; toast(err.message,"err"); }
+      loadServices(); loadMy();
+    }catch(err){
+      msg.className="form-msg err"; msg.textContent=err.message; toast(err.message,"err");
+      if(/sign-in|token|expired|login/i.test(err.message||"")) paintUser();
+    }
     finally{ $("bookBtn").disabled=false; $("bookBtn").textContent="BOOK SEAT →"; }
   });
 
-  /* my bookings */
-  $("lookupBtn").onclick=()=>loadMy($("lookupEmail").value.trim().toLowerCase());
-  async function loadMy(email){
+  /* my bookings — no manual email entry; loads only the signed-in user's bookings */
+  async function loadMy(){
     const box=$("myList");
-    if(!email||!email.includes("@")){ box.innerHTML=`<p class="hint">Enter a valid email.</p>`; return; }
+    if(!user||!user.email||!user.idToken){ box.innerHTML=`<p class="hint">Not signed in.</p>`; return; }
+    const email=user.email.toLowerCase();
     box.innerHTML=`<p class="hint">Loading…</p>`;
     let list=[];
     try{
-      const j=await apiPost({action:"mybookings",email});
+      const j=await apiPost({action:"mybookings",email,idToken:user.idToken});
       if(!j.ok) throw new Error(j.error);
       list=j.bookings;
     }catch(e){ box.innerHTML=`<p class="hint">⚠️ ${esc(e.message)}</p>`; return; }
@@ -202,19 +251,21 @@
       return `<div class="ticket-row">
       <div><strong>${esc(nm)} · ${esc(dep)}</strong><br><span class="id">${esc(b.bookingId)}${b.seatNo?" · seat "+esc(b.seatNo):""}${b.waitlistPosition?" · WL #"+esc(b.waitlistPosition):""}</span></div>
       <div style="display:flex;gap:8px;align-items:center"><span class="pill ${b.status}">${b.status}</span>
-      ${(b.status==="CONFIRMED"||b.status==="WAITLIST")?`<button class="cancel" onclick="window._cancel('${b.bookingId}','${esc(b.email||email)}')">Cancel</button>`:""}</div>
+      ${(b.status==="CONFIRMED"||b.status==="WAITLIST")?`<button class="cancel" onclick="window._cancel('${b.bookingId}')">Cancel</button>`:""}</div>
     </div>`;}).join("");
   }
-  window._cancel=async(id,email)=>{
+  window._cancel=async(id)=>{
+    if(!user||!user.email||!user.idToken){ toast("Please sign in first.","err"); return; }
+    const email=user.email.toLowerCase();
     if(!confirm("Cancel "+id+"? Seat goes to the waitlist.")) return;
     try{
-      const j=await apiPost({action:"cancel",bookingId:id,email});
+      const j=await apiPost({action:"cancel",bookingId:id,email,idToken:user.idToken});
       if(!j.ok) throw new Error(j.error);
       toast(j.message,"ok"); showModal("Cancelled",esc(j.message)+"<br><br>Mail sent by <b>SWC.IISER.TVM</b>.");
     }catch(e){ toast(e.message,"err"); }
-    loadServices(); loadMy(email);
+    loadServices(); loadMy();
   };
 
   initAuth(); loadServices();
-  if(user) loadMy(user.email);
+  if(user&&user.email) loadMy();
 })();

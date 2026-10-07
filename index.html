@@ -49,8 +49,9 @@
   <!-- booking -->
   <section>
     <h2 class="sec-t">Book a seat</h2>
-    <p class="hint">Only <strong>@iisertvm.ac.in</strong> IDs. One booking per email per bus. No seat choice — first-come, first-served.</p>
+    <p class="hint">Only <strong>@iisertvm.ac.in</strong> IDs via Google sign-in. One booking per email per bus. No seat choice — first-come, first-served.</p>
     <div id="gBtnWrap"></div>
+    <p id="authGate" class="auth-gate">🔒 Please sign in with Google above to book. Your IISER email is filled automatically — typing is disabled.</p>
     <form id="bookForm" autocomplete="on">
       <label class="fld"><span>BUS</span>
         <select id="fService" required></select>
@@ -58,14 +59,13 @@
       <label class="fld"><span>FULL NAME</span>
         <input id="fName" required maxlength="60" placeholder="e.g. John Doe" />
       </label>
-      <div class="two">
-        <label class="fld"><span>PHONE</span>
-          <input id="fPhone" required inputmode="tel" pattern="[0-9+\-\s]{8,15}" placeholder="10-digit mobile" />
-        </label>
-        <label class="fld"><span>IISER EMAIL</span>
-          <input id="fEmail" required type="email" placeholder="you@iisertvm.ac.in" />
-        </label>
-      </div>
+      <label class="fld"><span>PHONE</span>
+        <input id="fPhone" required inputmode="tel" pattern="[0-9+\-\s]{8,15}" placeholder="10-digit mobile" />
+      </label>
+      <label class="fld"><span>IISER EMAIL · LOCKED TO GOOGLE LOGIN 🔒</span>
+        <input id="fEmail" type="email" readonly tabindex="-1" placeholder="Sign in with Google to auto-fill" onfocus="this.blur()" />
+      </label>
+      <p class="hint lock-note">🔒 Email cannot be typed — it is taken only from your verified Google sign-in and must end with <strong>@iisertvm.ac.in</strong>.</p>
       <div id="formMsg" class="form-msg"></div>
       <button class="book-btn" type="submit" id="bookBtn">BOOK SEAT →</button>
       <p class="hint">Full bus? You'll be offered the waitlist — if someone cancels, #1 is auto-confirmed &amp; emailed by <strong>SWC.IISER.TVM</strong>.</p>
@@ -77,11 +77,8 @@
   <!-- my bookings -->
   <section>
     <h2 class="sec-t">My bookings</h2>
-    <div class="lookup">
-      <input id="lookupEmail" type="email" placeholder="you@iisertvm.ac.in" />
-      <button id="lookupBtn" class="mini-btn solid">Find</button>
-    </div>
-    <div id="myList" class="my-list"><p class="hint">Enter your IISER email to see / cancel bookings.</p></div>
+    <p id="myAuthHint" class="hint">🔒 Sign in with Google above to see / cancel your bookings. Email lookup is disabled — bookings load only from your signed-in ID.</p>
+    <div id="myList" class="my-list"><p class="hint">Not signed in.</p></div>
   </section>
 </main>
 
